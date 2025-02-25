@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Weather Cards</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+        }
+
+        .cards-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            max-width: 1200px;
+        }
+
+        .weather-card {
+            width: 250px;
+            height: 350px;
+            background-color: #1e1e1e;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            padding: 15px;
+            background-color: rgba(0, 0, 0, 0.3);
+            text-align: center;
+            z-index: 2;
+        }
+
+        .card-content {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .control-btn {
+            padding: 10px 15px;
+            background-color: #2c3e50;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .control-btn:hover {
+            background-color: #3498db;
+        }
+
+        .control-btn.active {
+            background-color: #3498db;
+        }
+
+        /* Wind Animation */
+        .wind-card .card-content {
+            background: linear-gradient(to bottom, #4a6d8c, #2c3e50);
+        }
+
+        .cloud {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+        }
+
+        .wind-line {
+            position: absolute;
+            height: 2px;
+            background-color: rgba(255, 255, 255, 0.6);
+            transform-origin: left center;
+        }
+
+        /* Rain Animation */
+        .rain-card .card-content {
+            background: linear-gradient(to bottom, #374785, #24305e);
+        }
+
+        .raindrop {
+            position: absolute;
+            width: 2px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+        }
+
+        /* Sun Animation */
+        .sun-card .card-content {
+            background: linear-gradient(to bottom, #ff7e5f, #feb47b);
+            overflow: hidden;
+        }
+
+        .sun {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background-color: #ffdc7c;
+            border-radius: 50%;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 40px 20px rgba(255, 220, 124, 0.6);
+        }
+
+        .sun-ray {
+            position: absolute;
+            background-color: rgba(255, 220, 124, 0.6);
+            transform-origin: bottom center;
+        }
+
+        /* Snow Animation */
+        .snow-card .card-content {
+            background: linear-gradient(to bottom, #7b85a6, #58668b);
+        }
+
+        .snowflake {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            opacity: 0.8;
+        }
+
+        /* Temperature and details */
+        .temperature {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .details {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* Dubai Card Styles */
+        .dubai-card .card-content {
+            background: linear-gradient(to bottom, #4a6d8c, #2c3e50);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        .dubai-weather-icon {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 10px;
+        }
+        
+        .dubai-weather-text {
+            text-align: center;
+            font-size: 1.1rem;
+            padding: 0 15px;
+            margin: 5px 0;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #fff;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Temperature Chart */
+        .temp-chart {
+            width: 100%;
+            height: 80px;
+            margin-top: 10px;
+            position: relative;
+            padding: 5px;
+        }
+
+        .temp-bar {
+            position: absolute;
+            bottom: 0;
+            width: 6px;
+            border-radius: 3px 3px 0 0;
+            background: linear-gradient(to top, #3498db, #f39c12);
+            transition: height 0.5s ease;
+        }
+
+        .temp-time {
+            position: absolute;
+            bottom: -18px;
+            font-size: 8px;
+            color: rgba(255,255,255,0.7);
+            transform: rotate(-45deg);
+            transform-origin: top left;
+        }
+        
+        /* Keyframe Animations */
+        @keyframes moveCloud {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(350px);
+            }
+        }
+
+        @keyframes windLine {
+            0% {
+                opacity: 0;
+                transform: translateX(0) scaleX(0);
+            }
+            10% {
+                opacity: 0.8;
+                transform: translateX(0) scaleX(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(150px) scaleX(0.5);
+            }
+        }
+
+        @keyframes rain {
+            0% {
+                top: -20px;
+                opacity: 0;
+            }
+            30% {
+                opacity: 1;
+            }
+            100% {
+                top: 100%;
+                opacity: 0.3;
+            }
+        }
+
+        @keyframes pulseSun {
+            0%, 100% {
+                box-shadow: 0 0 40px 15px rgba(255, 220, 124, 0.6);
+            }
+            50% {
+                box-shadow: 0 0 60px 30px rgba(255, 220, 124, 0.8);
+            }
+        }
+
+        @keyframes pulseRay {
+            0%, 100% {
+                height: 40px;
+                opacity: 0.5;
+            }
+            50% {
+                height: 60px;
+                opacity: 0.7;
+            }
+        }
+
+        @keyframes snow {
+            0% {
+                top: -10px;
+                opacity: 0;
+                transform: translateX(0) rotate(0deg);
+            }
+            10% {
+                opacity: 1;
+            }
+            100% {
+                top: 100%;
+                transform: translateX(20px) rotate(360deg);
+                opacity: 0.3;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Weather Animations</h1>
+    
+    <div class="cards-container">
+        <!-- Wind Card -->
+        <div class="weather-card wind-card">
+            <div class="card-header">
+                <h2>Wind</h2>
+                <div class="temperature">23°C</div>
+                <div class="details">15-25 km/h</div>
+            </div>
+            <div class="card-content" id="wind-content"></div>
+        </div>
+
+        <!-- Rain Card -->
+        <div class="weather-card rain-card">
+            <div class="card-header">
+                <h2>Rain</h2>
+                <div class="temperature">18°C</div>
+                <div class="details">Precipitation: 80%</div>
+            </div>
+            <div class="card-content" id="rain-content"></div>
+        </div>
+
+        <!-- Sun Card -->
+        <div class="weather-card sun-card">
+            <div class="card-header">
+                <h2>Sunny</h2>
+                <div class="temperature">29°C</div>
+                <div class="details">UV Index: High</div>
+            </div>
+            <div class="card-content" id="sun-content">
+                <div class="sun"></div>
+            </div>
+        </div>
+
+        <!-- Snow Card -->
+        <div class="weather-card snow-card">
+            <div class="card-header">
+                <h2>Snow</h2>
+                <div class="temperature">-5°C</div>
+                <div class="details">Snowfall: 5cm</div>
+            </div>
+            <div class="card-content" id="snow-content"></div>
+        </div>
+
+        <!-- Dubai Weather Card -->
+        <div class="weather-card dubai-card" id="dubai-weather-card">
+            <div class="card-header">
+                <h2>迪拜实时天气</h2>
+                <div class="temperature" id="dubai-temp">加载中...</div>
+                <div class="details" id="dubai-details">获取天气数据中</div>
+            </div>
+            <div class="card-content" id="dubai-content">
+                <!-- Animation will be added here based on current weather -->
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="control-btn active" onclick="toggleAllAnimations(true)">All On</button>
+        <button class="control-btn" onclick="toggleAllAnimations(false)">All Off</button>
+        <button class="control-btn" onclick="toggleAnimation('wind')">Wind</button>
+        <button class="control-btn" onclick="toggleAnimation('rain')">Rain</button>
+        <button class="control-btn" onclick="toggleAnimation('sun')">Sun</button>
+        <button class="control-btn" onclick="toggleAnimation('snow')">Snow</button>
+        <button class="control-btn" onclick="fetchDubaiWeather()">获取迪拜天气</button>
+    </div>
+
+    <script>
+        // Animation states
+        const animationState = {
+            wind: true,
+            rain: true,
+            sun: true,
+            snow: true,
+            dubai: true
+        };
+
+        // Wind animation
+        function createWindAnimation(container = document.getElementById('wind-content')) {
+            container.innerHTML = ''; // Clear previous elements
+            
+            // Create clouds
+            for (let i = 0; i < 5; i++) {
+                createCloud(container, i);
+            }
+            
+            // Create wind lines
+            for (let i = 0; i < 15; i++) {
+                createWindLine(container);
+            }
+        }
+
+        function createCloud(container, index) {
+            const cloud = document.createElement('div');
+            cloud.className = 'cloud';
+            
+            const size = 20 + Math.random() * 60;
+            const top = 20 + (index * 40);
+            const left = -100 - (Math.random() * 200);
+            
+            cloud.style.width = `${size}px`;
+            cloud.style.height = `${size / 2}px`;
+            cloud.style.top = `${top}px`;
+            cloud.style.left = `${left}px`;
+            cloud.style.opacity = `${0.4 + Math.random() * 0.4}`;
+            
+            // Animation
+            cloud.style.animation = `moveCloud ${10 + Math.random() * 15}s linear infinite`;
+            
+            container.appendChild(cloud);
+        }
+
+        function createWindLine(container) {
+            const line = document.createElement('div');
+            line.className = 'wind-line';
+            
+            const width = 20 + Math.random() * 50;
+            const top = Math.random() * 100 + '%';
+            const left = Math.random() * 50 + '%';
+            const angle = Math.random() * 10 - 5;
+            
+            line.style.width = `${width}px`;
+            line.style.top = top;
+            line.style.left = left;
+            line.style.transform = `rotate(${angle}deg)`;
+            line.style.animation = `windLine ${2 + Math.random() * 3}s linear infinite`;
+            
+            container.appendChild(line);
+        }
+
+        // Rain animation
+        function createRainAnimation(container = document.getElementById('rain-content')) {
+            container.innerHTML = ''; // Clear previous elements
+            
+            for (let i = 0; i < 60; i++) {
+                createRaindrop(container);
+            }
+        }
+
+        function createRaindrop(container) {
+            const raindrop = document.createElement('div');
+            raindrop.className = 'raindrop';
+            
+            const height = 10 + Math.random() * 15;
+            const left = Math.random() * 100 + '%';
+            const delay = Math.random() * 2;
+            
+            raindrop.style.height = `${height}px`;
+            raindrop.style.left = left;
+            raindrop.style.animation = `rain ${1 + Math.random() * 0.5}s linear infinite`;
+            raindrop.style.animationDelay = `${delay}s`;
+            
+            container.appendChild(raindrop);
+        }
+
+        // Sun animation
+        function createSunAnimation(container = document.getElementById('sun-content')) {
+            container.innerHTML = ''; // Clear previous elements
+            
+            // Create sun
+            const sun = document.createElement('div');
+            sun.className = 'sun';
+            sun.style.animation = 'pulseSun 4s ease-in-out infinite';
+            container.appendChild(sun);
+            
+            // Create sun rays
+            for (let i = 0; i < 8; i++) {
+                createSunRay(container, i);
+            }
+        }
+
+        function createSunRay(container, index) {
+            const ray = document.createElement('div');
+            ray.className = 'sun-ray';
+            
+            const angle = (index * 45) % 360;
+            const length = 40 + Math.random() * 20;
+            
+            ray.style.width = '4px';
+            ray.style.height = `${length}px`;
+            ray.style.top = '80px';
+            ray.style.left = '125px';
+            ray.style.transform = `rotate(${angle}deg)`;
+            ray.style.animation = `pulseRay ${3 + Math.random()}s ease-in-out infinite`;
+            
+            container.appendChild(ray);
+        }
+
+        // Snow animation
+        function createSnowAnimation(container = document.getElementById('snow-content')) {
+            container.innerHTML = ''; // Clear previous elements
+            
+            for (let i = 0; i < 70; i++) {
+                createSnowflake(container);
+            }
+        }
+
+        function createSnowflake(container) {
+            const snowflake = document.createElement('div');
+            snowflake.className = 'snowflake';
+            
+            const size = 2 + Math.random() * 5;
+            const left = Math.random() * 100 + '%';
+            const delay = Math.random() * 5;
+            
+            snowflake.style.width = `${size}px`;
+            snowflake.style.height = `${size}px`;
+            snowflake.style.left = left;
+            snowflake.style.animation = `snow ${5 + Math.random() * 5}s linear infinite`;
+            snowflake.style.animationDelay = `${delay}s`;
+            
+            container.appendChild(snowflake);
+        }
+
+        // Toggle animations
+        function toggleAnimation(type) {
+            animationState[type] = !animationState[type];
+            
+            if (animationState[type]) {
+                switch(type) {
+                    case 'wind':
+                        createWindAnimation();
+                        break;
+                    case 'rain':
+                        createRainAnimation();
+                        break;
+                    case 'sun':
+                        createSunAnimation();
+                        break;
+                    case 'snow':
+                        createSnowAnimation();
+                        break;
+                }
+            } else {
+                document.getElementById(`${type}-content`).innerHTML = '';
+                if (type === 'sun') {
+                    // Recreate empty sun for background
+                    const sunContent = document.getElementById('sun-content');
+                    sunContent.innerHTML = '<div class="sun" style="animation: none;"></div>';
+                }
+            }
+            
+            // Update button states
+            updateButtonStates();
+        }
+
+        function toggleAllAnimations(state) {
+            for (const key in animationState) {
+                animationState[key] = state;
+            }
+            
+            if (state) {
+                createWindAnimation();
+                createRainAnimation();
+                createSunAnimation();
+                createSnowAnimation();
+            } else {
+                document.getElementById('wind-content').innerHTML = '';
+                document.getElementById('rain-content').innerHTML = '';
+                document.getElementById('sun-content').innerHTML = '<div class="sun" style="animation: none;"></div>';
+                document.getElementById('snow-content').innerHTML = '';
+            }
+            
+            // Update button states
+            updateButtonStates();
+        }
+
+        function updateButtonStates() {
+            const buttons = document.querySelectorAll('.control-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            if (animationState.wind && animationState.rain && animationState.sun && animationState.snow) {
+                buttons[0].classList.add('active'); // All On button
+            } else if (!animationState.wind && !animationState.rain && !animationState.sun && !animationState.snow) {
+                buttons[1].classList.add('active'); // All Off button
+            }
+            
+            if (animationState.wind) buttons[2].classList.add('active');
+            if (animationState.rain) buttons[3].classList.add('active');
+            if (animationState.sun) buttons[4].classList.add('active');
+            if (animationState.snow) buttons[5].classList.add('active');
+        }
+
+        // Dubai weather functions
+        function fetchDubaiWeather() {
+            // 显示加载中状态
+            const dubaiContent = document.getElementById('dubai-content');
+            dubaiContent.innerHTML = '<div class="loading-spinner"></div><p class="dubai-weather-text">正在获取迪拜天气数据...</p>';
+            
+            document.getElementById('dubai-temp').textContent = '加载中...';
+            document.getElementById('dubai-details').textContent = '获取天气数据中';
+            
+            // 迪拜的坐标
+            const lat = 25.2048;
+            const lon = 55.2708;
+            
+            // 使用 Open-Meteo API
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m&timezone=auto`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('网络响应异常');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    updateDubaiWeather(data);
+                })
+                .catch(error => {
+                    console.error('获取天气数据失败:', error);
+                    document.getElementById('dubai-temp').textContent = '获取失败';
+                    document.getElementById('dubai-details').textContent = '请稍后再试';
+                    dubaiContent.innerHTML = '<p class="dubai-weather-text">无法获取天气数据，请检查网络连接。</p>';
+                });
+        }
+        
+        function updateDubaiWeather(data) {
+            // 获取当前时间，找到最接近的小时
+            const now = new Date();
+            const currentHour = now.getHours();
+            
+            // 从 Open-Meteo API 获取时间和温度数据
+            const times = data.hourly.time;
+            const temperatures = data.hourly.temperature_2m;
+            
+            // 找到当前时间索引
+            const currentDate = now.toISOString().split('T')[0];
+            let currentIndex = -1;
+            
+            for (let i = 0; i < times.length; i++) {
+                const timeDate = times[i].split('T')[0];
+                const timeHour = parseInt(times[i].split('T')[1].split(':')[0]);
+                
+                if (timeDate === currentDate && timeHour === currentHour) {
+                    currentIndex = i;
+                    break;
+                }
+            }
+            
+            // 如果找不到当前时间，使用第一个数据点
+            if (currentIndex === -1) {
+                currentIndex = 0;
+            }
+            
+            // 获取当前温度
+            const currentTemp = temperatures[currentIndex];
+            
+            // 更新温度显示
+            document.getElementById('dubai-temp').textContent = `${Math.round(currentTemp)}°C`;
+            document.getElementById('dubai-details').textContent = `刷新时间: ${now.toLocaleTimeString()}`;
+            
+            // 清除现有内容
+            const dubaiContent = document.getElementById('dubai-content');
+            dubaiContent.innerHTML = '';
+            
+            // 基于温度确定天气类型和动画
+            const weatherType = getWeatherTypeFromTemp(currentTemp);
+            const dubaiCard = document.getElementById('dubai-weather-card');
+            
+            // 移除所有可能的类
+            dubaiCard.classList.remove('wind-card', 'rain-card', 'sun-card', 'snow-card');
+            
+            // 添加对应的样式和动画
+            switch(weatherType) {
+                case 'sun':
+                    dubaiCard.classList.add('sun-card');
+                    createSunAnimation(dubaiContent);
+                    break;
+                case 'rain':
+                    dubaiCard.classList.add('rain-card');
+                    createRainAnimation(dubaiContent);
+                    break;
+                case 'wind':
+                    dubaiCard.classList.add('wind-card');
+                    createWindAnimation(dubaiContent);
+                    break;
+                case 'snow':
+                    dubaiCard.classList.add('snow-card');
+                    createSnowAnimation(dubaiContent);
+                    break;
+                default:
+                    dubaiCard.classList.add('sun-card');
+                    createSunAnimation(dubaiContent);
+            }
+            
+            // 添加位置信息
+            const locationInfo = document.createElement('p');
+            locationInfo.className = 'dubai-weather-text';
+            locationInfo.textContent = `迪拜, 阿联酋`;
+            dubaiContent.appendChild(locationInfo);
+            
+            // 添加天气描述
+            const weatherInfo = document.createElement('p');
+            weatherInfo.className = 'dubai-weather-text';
+            weatherInfo.textContent = getWeatherDescription(weatherType, currentTemp);
+            dubaiContent.appendChild(weatherInfo);
+            
+            // 创建温度趋势图
+            createTemperatureChart(dubaiContent, temperatures, times, currentIndex);
+        }
+        
+        function createTemperatureChart(container, temperatures, times, currentIndex) {
+            // 创建图表容器
+            const chartContainer = document.createElement('div');
+            chartContainer.className = 'temp-chart';
+            
+            // 获取接下来24小时的数据点（每3小时一个）
+            const startIndex = currentIndex;
+            const numPoints = 8;  // 显示8个点
+            const interval = 3;   // 每3小时一个点
+            
+            // 找出最高和最低温度进行归一化
+            let minTemp = 100;
+            let maxTemp = -100;
+            
+            for (let i = 0; i < numPoints; i++) {
+                const idx = startIndex + i * interval;
+                if (idx < temperatures.length) {
+                    const temp = temperatures[idx];
+                    minTemp = Math.min(minTemp, temp);
+                    maxTemp = Math.max(maxTemp, temp);
+                }
+            }
+            
+            // 添加一些边距
+            minTemp -= 2;
+            maxTemp += 2;
+            const tempRange = maxTemp - minTemp;
+            
+            // 创建温度柱状图
+            for (let i = 0; i < numPoints; i++) {
+                const idx = startIndex + i * interval;
+                if (idx < temperatures.length) {
+                    const temp = temperatures[idx];
+                    const time = times[idx].split('T')[1].split(':')[0] + ':00';
+                    const height = ((temp - minTemp) / tempRange) * 70 + 10;  // 计算高度，确保至少10px高
+                    
+                    // 创建温度条
+                    const bar = document.createElement('div');
+                    bar.className = 'temp-bar';
+                    bar.style.height = `${height}px`;
+                    bar.style.left = `${(i * (100 / numPoints)) + (50 / numPoints)}%`;
+                    bar.setAttribute('title', `${time} - ${temp}°C`);
+                    
+                    // 创建时间标签
+                    const timeLabel = document.createElement('div');
+                    timeLabel.className = 'temp-time';
+                    timeLabel.textContent = time;
+                    timeLabel.style.left = `${(i * (100 / numPoints)) + (50 / numPoints)}%`;
+                    
+                    chartContainer.appendChild(bar);
+                    chartContainer.appendChild(timeLabel);
+                }
+            }
+            
+            // 添加图表说明
+            const chartTitle = document.createElement('p');
+            chartTitle.className = 'dubai-weather-text';
+            chartTitle.style.marginTop = '10px';
+            chartTitle.textContent = '24小时温度趋势';
+            
+            container.appendChild(chartTitle);
+            container.appendChild(chartContainer);
+        }
+        
+        // 根据温度推断天气类型
+        function getWeatherTypeFromTemp(temp) {
+            // 在迪拜，通常是晴天，但我们可以基于温度做一些假设
+            if (temp >= 35) {
+                return 'sun';  // 高温通常意味着晴天
+            } else if (temp >= 25) {
+                // 在25-35度之间，有80%可能是晴天，20%可能是多云
+                return Math.random() < 0.8 ? 'sun' : 'wind';
+            } else if (temp >= 15) {
+                // 在15-25度之间，有60%可能是晴天，35%可能是多云，5%可能是小雨
+                const rand = Math.random();
+                if (rand < 0.6) return 'sun';
+                else if (rand < 0.95) return 'wind';
+                else return 'rain';
+            } else {
+                // 低于15度（迪拜很少见），可能是阴天或雨天
+                return Math.random() < 0.7 ? 'wind' : 'rain';
+            }
+        }
+        
+        // 获取天气描述
+        function getWeatherDescription(type, temp) {
+            switch(type) {
+                case 'sun':
+                    if (temp >= 35) return '晴朗炎热';
+                    if (temp >= 28) return '晴朗';
+                    return '晴朗舒适';
+                case 'wind':
+                    return '多云';
+                case 'rain':
+                    return '小雨';
+                case 'snow':
+                    return '雪'; // 迪拜不太可能下雪
+                default:
+                    return '晴朗';
+            }
+        }
+
+        // Initialize all animations
+        window.onload = function() {
+            createWindAnimation();
+            createRainAnimation();
+            createSunAnimation();
+            createSnowAnimation();
+            
+            // 默认加载迪拜天气
+            fetchDubaiWeather();
+        };
+    </script>
+</body>
+</html>
